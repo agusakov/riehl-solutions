@@ -7,7 +7,7 @@ import tactic
 
 open category_theory
 
-universes v u
+universes v v₂ u u₂
 
 variables (C : Type u) [𝒞 : category.{v} C]
 include 𝒞
@@ -64,3 +64,86 @@ begin
     rw h2,
     apply is_iso.of_iso_inverse,
 end
+
+/-Exercise 1.1.ii-/
+/-Let C be a category. Show that the collection of isomorphisms in C defines a 
+subcategory, the maximal groupoid inside C.-/
+--To do:
+-- define objects (just need to show 𝟙 C is iso and I think all the objects of C follow?)
+-- define morphisms (just isomorphisms of C)
+-- show that all morphisms have dom/cod (spoiler: they do, we have all objects)
+-- identity morphisms (again, they are isomorphisms)
+-- closure of composite morphisms - probably the only hard part in Lean
+
+def identity_is_iso {X : C} : is_iso (𝟙 X) :=
+begin
+    have hinv : 𝟙 X ≫ 𝟙 X = 𝟙 X :=
+        by {rw [category.id_comp]},
+    sorry,
+end
+-- need f.hom ≫ g.hom ≫ g.inv ≫ f.inv = 𝟙 X
+def hom_comp_is_iso {X Y Z : C} (f : X ≅ Y) (g : Y ≅ Z) :
+is_iso (f.hom ≫ g.hom) := 
+begin
+    have hfx : 𝟙 X = f.hom ≫ f.inv :=
+        by {sorry},
+    have hfy : 𝟙 Y = f.inv ≫ f.hom := 
+        by {sorry},
+    have hgy : 𝟙 Y = g.hom ≫ g.inv :=
+        by {sorry},
+    have hgz : 𝟙 Z = g.inv ≫ g.hom :=
+        by {sorry},
+    
+    have hfin1 : 𝟙 X = f.hom ≫ g.hom ≫ g.inv ≫ f.inv :=
+        calc 𝟙 X = f.hom ≫ f.inv :
+            by {sorry}
+        ... = f.hom ≫ 𝟙 Y ≫ f.inv :
+            by {sorry}
+        ... = f.hom ≫ g.hom ≫ g.inv ≫ f.inv :
+            by {sorry},
+    sorry,
+end
+-- incredibly inefficient. not even gonna bother with this.
+-- figure out how to rephrase.
+
+def inv_comp_is_iso {X Y Z : C} (f : X ≅ Y) (g : Y ≅ Z) :
+is_iso (g.inv ≫ f.inv) := 
+begin
+    sorry,
+end
+
+
+/-Exercise 1.1.iii For any category C and any object A ∈ C, show that:-/
+
+/-(i) There is a category A/C whose objects are morphisms f : A ⟶ X
+with domain A and in which a morphism from f : A ⟶ X to g : A ⟶ Y
+is a map h : X ⟶ Y such that g = hf.-/
+
+variables (AC : Type v) [A𝒞 : category.{v} AC]
+include A𝒞
+--goal:
+/-
+class category_struct (obj : Type u)
+extends has_hom.{v} obj : Type (max u (v+1)) :=
+(id       : Π X : obj, hom X X)
+(comp     : Π {X Y Z : obj}, (X ⟶ Y) → (Y ⟶ Z) → (X ⟶ Z))
+
+class category (obj : Type u)
+extends category_struct.{v} obj : Type (max u (v+1)) :=
+(id_comp' : ∀ {X Y : obj} (f : hom X Y), 𝟙 X ≫ f = f . obviously)
+(comp_id' : ∀ {X Y : obj} (f : hom X Y), f ≫ 𝟙 Y = f . obviously)
+(assoc'   : ∀ {W X Y Z : obj} (f : hom W X) (g : hom X Y) (h : hom Y Z),
+  (f ≫ g) ≫ h = f ≫ (g ≫ h) . obviously)-/
+class has_slice_hom (obj : Type v) : Type (max v (v+1)) :=
+(hom : obj → obj → Type v)
+
+--ugh
+/-class slice_struct (A : C) (obj : Type v) extends has_slice_hom.{v} obj : Type (max v (v+1)) :=
+(id : Π {X : C}, (A ⟶ X) : obj, hom (A ⟶ X) (A ⟶ X). obviously)
+(comp : Π {(A ⟶ X) (A ⟶ Y) (A ⟶ Z): AC}, (A ⟶ X) ⟶ (A ⟶ Y))-/
+
+
+/-class slice (obj : Type u) extends category.{v} obj : Type (max u (v+1)) :=
+(inv       : Π {X Y : obj}, (X ⟶ Y) → (Y ⟶ X))
+(inv_comp' : ∀ {X Y : obj} (f : X ⟶ Y), comp (inv f) f = id Y . obviously)
+(comp_inv' : ∀ {X Y : obj} (f : X ⟶ Y), comp f (inv f) = id X . obviously)-/
