@@ -1,0 +1,8 @@
+[package]
+name = "riehl-solutions"
+version = "0.1"
+lean_version = "leanprover-community/lean:3.16.5"
+path = "src"
+
+[dependencies]
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "a220286ac49a16bee74e85d9d2b308ce0d30d858"}
