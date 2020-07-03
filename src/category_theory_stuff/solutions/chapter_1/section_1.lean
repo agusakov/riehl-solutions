@@ -3,14 +3,14 @@ import category_theory.category -- this transitively imports
 -- category_theory.functor
 -- category_theory.natural_transformation
 import category_theory.isomorphism
+import category_theory.groupoid
 import tactic
 
 open category_theory
 
-universes v v₂ u u₂
+universes v u
 
-variables (C : Type u) [𝒞 : category.{v} C]
-include 𝒞
+variables (C : Type u) [category.{v} C]
 
 --variables {W X Y Z : C}
 --variables (f : X ⟶ Y) (g : Y ⟶ X) (h : Y ⟶ X)
@@ -18,17 +18,17 @@ include 𝒞
 /-Exercise 1.1.i-/ 
 /-(i) Show that a morphism can have at most one inverse isomorphism-/
 
-lemma at_most_one_inv {X Y : C} (f : X ⟶ Y) (g : Y ≅ X): 
-f ≫ g.hom = 𝟙 X → f = g.inv :=
+lemma at_most_one_inv {X Y : C} (f : X ⟶ Y) (g : Y ⟶ X) [is_iso g]: 
+f ≫ g = 𝟙 X → f = inv g:=
 begin
     intro h1,
     calc f = f ≫ 𝟙 Y :
         by {rw [category.comp_id]}
-        ... = f ≫ g.hom ≫ g.inv :
-        by {rw [iso.hom_inv_id]}
-        ... = 𝟙 X ≫ g.inv:
+        ... = f ≫ g ≫ inv g :
+        by {rw [is_iso.hom_inv_id]}
+        ... = 𝟙 X ≫ inv g:
         by {symmetry' at h1, rw [h1, category.assoc]}
-        ... = g.inv:
+        ... = inv g:
         by {rw [category.id_comp]}
 end
 
@@ -50,67 +50,65 @@ begin
     by {rw [category.comp_id]}
 end
 
-def left_right_inv_iso {X Y : C} (f : X ⟶ Y) (g : Y ≅ X) (h : Y ≅ X) : 
-f ≫ g.hom = 𝟙 X ∧ h.hom ≫ f = 𝟙 Y → is_iso f :=
+def left_right_inv_iso {X Y : C} (f : X ⟶ Y) (g : Y ⟶ X) (h : Y ⟶ X) [is_iso g] [is_iso h]: 
+f ≫ g = 𝟙 X ∧ h ≫ f = 𝟙 Y → is_iso f :=
 begin
     intro h1,
     cases h1 with hgx hhy,
-    have hg : g.hom = h.hom :=
+    have hg : g = h :=
         -- not proud of this one
         by {apply left_right_inv_eq, split, exact hgx, exact hhy},
     rw hg at hgx,
-    have h2 : f = h.inv :=
+    have h2 : f = inv h :=
         by {apply at_most_one_inv, exact hgx},
     rw h2,
-    apply is_iso.of_iso_inverse,
+    apply is_iso.inv_is_iso,
 end
 
 /-Exercise 1.1.ii-/
 /-Let C be a category. Show that the collection of isomorphisms in C defines a 
 subcategory, the maximal groupoid inside C.-/
 --To do:
--- define objects (just need to show 𝟙 C is iso and I think all the objects of C follow?)
+-- define objects (all obj of C)
 -- define morphisms (just isomorphisms of C)
--- show that all morphisms have dom/cod (spoiler: they do, we have all objects)
+-- show that all morphisms have dom/cod? (spoiler: they do, we have all objects)
 -- identity morphisms (again, they are isomorphisms)
 -- closure of composite morphisms - probably the only hard part in Lean
 
-def identity_is_iso {X : C} : is_iso (𝟙 X) :=
-begin
-    have hinv : 𝟙 X ≫ 𝟙 X = 𝟙 X :=
-        by {rw [category.id_comp]},
-    sorry,
-end
--- need f.hom ≫ g.hom ≫ g.inv ≫ f.inv = 𝟙 X
-def hom_comp_is_iso {X Y Z : C} (f : X ≅ Y) (g : Y ≅ Z) :
-is_iso (f.hom ≫ g.hom) := 
-begin
-    have hfx : 𝟙 X = f.hom ≫ f.inv :=
-        by {sorry},
-    have hfy : 𝟙 Y = f.inv ≫ f.hom := 
-        by {sorry},
-    have hgy : 𝟙 Y = g.hom ≫ g.inv :=
-        by {sorry},
-    have hgz : 𝟙 Z = g.inv ≫ g.hom :=
-        by {sorry},
-    
-    have hfin1 : 𝟙 X = f.hom ≫ g.hom ≫ g.inv ≫ f.inv :=
-        calc 𝟙 X = f.hom ≫ f.inv :
-            by {sorry}
-        ... = f.hom ≫ 𝟙 Y ≫ f.inv :
-            by {sorry}
-        ... = f.hom ≫ g.hom ≫ g.inv ≫ f.inv :
-            by {sorry},
-    sorry,
-end
--- incredibly inefficient. not even gonna bother with this.
--- figure out how to rephrase.
+def identity_is_iso (X : C) : is_iso (𝟙 X) :=
+{ inv := 𝟙 X,
+  hom_inv_id' := by rw [category.id_comp],
+  inv_hom_id' := by rw [category.id_comp]}
 
-def inv_comp_is_iso {X Y Z : C} (f : X ≅ Y) (g : Y ≅ Z) :
-is_iso (g.inv ≫ f.inv) := 
-begin
-    sorry,
-end
+
+-- need f.hom ≫ g.hom ≫ g.inv ≫ f.inv = 𝟙 X and vice versa
+def iso_comp_is_iso {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) [is_iso f] [is_iso g] :
+is_iso (f ≫ g) := 
+{ inv := (inv g ≫ inv f),
+  hom_inv_id' := by rw [← category.assoc, category.assoc f, is_iso.hom_inv_id, category.comp_id, is_iso.hom_inv_id],
+  inv_hom_id' := by rw [← category.assoc, category.assoc (inv g), is_iso.inv_hom_id, category.comp_id, is_iso.inv_hom_id]}
+
+
+def core (C : Type u) : Type u := C --objects are elements of type core C
+variable (X : core C)
+#check X --nice
+
+-- don't think I need to show that it's a groupoid?
+
+instance has_hom : core C :=
+{ hom := is_iso }
+
+instance core_groupoid : groupoid.{v} (core C) := { 
+  hom := /-λ X Y : core C, X ⟶ Y-/sorry,
+  id := by apply identity_is_iso,
+  comp := _,
+  id_comp' := _,
+  comp_id' := _,
+  assoc' := _,
+  inv := _,
+  inv_comp' := _,
+  comp_inv' := _ } --hhhhh
+
 
 
 /-Exercise 1.1.iii For any category C and any object A ∈ C, show that:-/
@@ -119,8 +117,10 @@ end
 with domain A and in which a morphism from f : A ⟶ X to g : A ⟶ Y
 is a map h : X ⟶ Y such that g = hf.-/
 
-variables (AC : Type v) [A𝒞 : category.{v} AC]
-include A𝒞
+/-instance unop_mono_of_epi {A B : Cᵒᵖ} (f : A ⟶ B) [epi f] : mono f.unop :=
+⟨λ Z g h eq, has_hom.hom.op_inj ((cancel_epi f).1 (has_hom.hom.unop_inj eq))⟩-/
+
+
 --goal:
 /-
 class category_struct (obj : Type u)
@@ -134,8 +134,6 @@ extends category_struct.{v} obj : Type (max u (v+1)) :=
 (comp_id' : ∀ {X Y : obj} (f : hom X Y), f ≫ 𝟙 Y = f . obviously)
 (assoc'   : ∀ {W X Y Z : obj} (f : hom W X) (g : hom X Y) (h : hom Y Z),
   (f ≫ g) ≫ h = f ≫ (g ≫ h) . obviously)-/
-class has_slice_hom (obj : Type v) : Type (max v (v+1)) :=
-(hom : obj → obj → Type v)
 
 --ugh
 /-class slice_struct (A : C) (obj : Type v) extends has_slice_hom.{v} obj : Type (max v (v+1)) :=
